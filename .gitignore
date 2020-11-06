@@ -1,0 +1,22 @@
+# OS X
+.DS_Store
+
+# Eclipse
+.settings
+.project
+.classpath
+/build/
+/bin/
+/target/
+
+# Rstudio
+.R* 
+
+# Python
+*.pyc
+.idea
+
+# ignore RDS files > 50 MB (GitHub can't handle)
+data/analysis/downsample_fractions/GO.rds
+data/analysis/analysis_grid/GO.rds
+data/analysis/fractions_vs_replicates/GO.rds

@@ -1,0 +1,18 @@
+Homo sapiens
+Arabidopsis thaliana
+Mus musculus
+Caenorhabditis elegans
+Trypanosoma brucei
+Strongylocentrotus purpuratus
+Xenopus laevis
+Nematostella vectensis
+Plasmodium berghei
+Plasmodium falciparum
+Plasmodium knowlesi
+Triticum aestivum
+Brassica oleracea var. italica
+Drosophila melanogaster
+Chaetomium thermophilum
+Chlamydomonas reinhardtii
+Dictyostelium discoideum
+Oryza sativa
