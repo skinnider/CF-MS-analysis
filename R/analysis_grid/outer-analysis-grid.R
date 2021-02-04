@@ -23,7 +23,7 @@ source("R/functions/detect_system.R")
 # establish grid of analyses
 source("R/functions.R") ## contains metrics used to predict interactions
 opts = list(
-  analysis = c('complexes', 'GO'),
+  analysis = c('complexes', 'GO', 'individual_complexes'),
   metric = metrics,
   transform = c('none', 'quantile', 'log'),
   missing = c('NA', 'zero', 'noise')
@@ -74,8 +74,12 @@ species = experiments %>% dplyr::select(Accession, Replicate, Species) %>%
 grid %<>%
   left_join(species, by = c('accession' = 'Accession', 
                             'experiment' = 'Replicate')) %>%
-  filter(!(analysis == 'complexes' & 
+  filter(!(grepl("complexes", analysis) & 
              !species %in% c("Homo sapiens", "Mus musculus")))
+
+# ignore XL-SEC with individual complexes
+grid %<>% filter(!(analysis == "individual_complexes" & 
+                     accession == 'PXD003754'))
 
 # clean up grid
 grid %<>%

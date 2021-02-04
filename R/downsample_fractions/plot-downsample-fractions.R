@@ -17,7 +17,7 @@ dat1 = readRDS("data/analysis/downsample_fractions/complexes.rds") %>%
 # filter to experiments with at least 50 fractions
 cdf = readRDS("data/QC/protein-groups-CDF.rds")
 n_fractions = cdf %>%
-  group_by(accession, experiment, quant_mode, search) %>%
+  group_by(accession, experiment, quant_mode) %>%
   summarise(fraction_count = max(n_fractions)) %>%
   ungroup()
 expts = filter(n_fractions, fraction_count >= 50)

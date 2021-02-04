@@ -181,6 +181,7 @@ clean_metric = function(str_vec) {
                "Wtd. cross-correlation" = "wccor",
                "Bayesian correlation" = "bayes_cor",
                "Bray-Curtis distance" = "bray_curtis",
-               "Mutual information" = "MI") %>%
+               "Mutual information" = "MI",
+               "Co-apex score" = "co_apex") %>%
     as.character()
 }

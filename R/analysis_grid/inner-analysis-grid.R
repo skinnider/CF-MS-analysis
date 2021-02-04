@@ -12,7 +12,8 @@ parser$add_argument('--output_dir', type = 'character', required = T)
 parser$add_argument('--matrix_dir', type = 'character', 
                     default = "~/projects/rrg-ljfoster-ab/skinnim/CF-MS-analysis/matrices")
 parser$add_argument('--analysis', type = 'character',
-                    choices = c('GO', 'complexes'), required = T)
+                    choices = c('GO', 'complexes', 'individudal_complexes'), 
+                    required = T)
 parser$add_argument('--metric', type = 'character', choices = metrics, 
                     required = T)
 parser$add_argument('--transform', type = 'character', 
@@ -148,7 +149,7 @@ for (input_file in input_files) {
            input_file, ")")
     }
     
-    # read three sources of complexes
+    # read complexes
     complex_species = fct_recode(species,
                                  'human' = 'Homo sapiens',
                                  'mouse' = 'Mus musculus')
@@ -188,6 +189,70 @@ for (input_file in input_files) {
       
       # append results
       row = data.frame(quant_mode = quant_mode,
+                       auroc = auroc)
+      results %<>% bind_rows(row)
+    }
+  } else if (args$analysis == 'individual_complexes') {
+    # throw an error if complexes is being run on a non-human/mouse species
+    if (!species %in% c("Homo sapiens", "Mus musculus")) {
+      stop("can't run complex analysis on species: ", species, " (file: ",
+           input_file, ")")
+    }
+    
+    # read complexes from CORUM
+    complex_species = fct_recode(species,
+                                 'human' = 'Homo sapiens',
+                                 'mouse' = 'Mus musculus')
+    complex_file = paste0(
+      "~/git/network-validation/data/complex/CORUM/complexes_", 
+      complex_species, ".txt")
+    complexes = read.delim(complex_file) %>%
+      as_annotation_list(., 'gene_name', 'complex') %>%
+      # remove any terms annotated to fewer than three proteins
+      extract(lengths(.) >= 3)
+    
+    # map proteins to genes
+    map = with(meta, setNames(`Gene names`, `Majority protein IDs`))
+    rownames(cor) = colnames(cor) = unname(map[rownames(cor)])
+    # for this analysis, drop protein groups that map to >1 gene
+    keep = !grepl(";", rownames(cor))
+    cor %<>% extract(keep, keep)
+    
+    # convert correlations to pairwise data frame
+    pairs = reshape2::melt(cor, varnames = c('gene1', 'gene2'),
+                           value.name = 'cor') %>%
+      drop_na() %>%
+      filter(as.integer(gene1) < as.integer(gene2))
+    
+    # filter to relevant complexes
+    complexes %<>% map(~ intersect(., rownames(cor))) %>%
+      extract(lengths(.) >= 3) %>%
+      # remove duplicates
+      extract(!duplicated(.))
+    
+    # map over complexes
+    for (complex_idx in seq_along(complexes)) {
+      complex_name = names(complexes)[complex_idx]
+      message("[", complex_idx, "/", length(complexes), "] analyzing complex: ",
+              complex_name, " ...")
+      targets = complexes[[complex_idx]]
+      
+      # create two vectors
+      pairs0 = pairs %>%
+        mutate(y = ifelse(gene1 %in% targets & gene2 %in% targets, 1, 0))
+      x = pairs0$cor
+      y = pairs0$y
+      if (n_distinct(y) < 2) {
+        message("  skipping complex")
+        next
+      }
+      auroc = auc(roc(predictions = x,
+                      labels = factor(y, levels = c('0', '1'))))
+      
+      # append results
+      row = data.frame(quant_mode = quant_mode,
+                       complex = complex_name,
+                       n_proteins = length(targets),
                        auroc = auroc)
       results %<>% bind_rows(row)
     }
@@ -245,7 +310,7 @@ for (input_file in input_files) {
       protein_groups = meta$`Majority protein IDs`
       annotations = protein_groups %>%
         strsplit(';') %>%
-        map(~ . %in% targets)
+          map(~ . %in% targets)
       true_positives = protein_groups[map_lgl(annotations, ~ all(.) == TRUE)]
       # drop any protein groups with discordant mappings
       discordant = protein_groups[map_int(annotations, n_distinct) != 1]

@@ -219,7 +219,7 @@ for (quant_mode in quant_modes) {
              input_file, ")")
       }
       
-      # read three sources of complexes
+      # read complexes
       complex_species = fct_recode(species,
                                    'human' = 'Homo sapiens',
                                    'mouse' = 'Mus musculus')
