@@ -186,11 +186,11 @@ p2b = delta2 %>%
   geom_hline(aes(yintercept = 0), color = 'grey88', size = 0.65) +
   geom_vline(aes(xintercept = 0), color = 'grey88', size = 0.65) +
   geom_point(size = 0.8, shape = 1) + 
-  geom_point(data = summary2c, color = red, size = 0.8) +
-  geom_errorbar(data = summary2c, aes(ymin = delta_auc - sd_auc, 
+  geom_point(data = summary2b, color = red, size = 0.8) +
+  geom_errorbar(data = summary2b, aes(ymin = delta_auc - sd_auc, 
                                      ymax = delta_auc + sd_auc), 
                 width = 0, color = red, size = 0.4) +
-  geom_errorbarh(data = summary2c, aes(xmin = delta_obs - sd_obs, 
+  geom_errorbarh(data = summary2b, aes(xmin = delta_obs - sd_obs, 
                                       xmax = delta_obs + sd_obs), 
                  width = 0, color = red, size = 0.4) +
   scale_x_continuous(expression(paste(Delta, '(# of proteins)')),

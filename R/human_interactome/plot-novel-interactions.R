@@ -58,3 +58,53 @@ p = pubs %>%
 p
 ggsave("fig/analysis/human_interactome/novel-interactions.pdf",
        p, width = 4.25, height = 2.5, units = 'cm', useDingbats = FALSE)
+
+## compute all overlaps
+comparison_list %<>% map(~ {
+  target = .x
+  # alphabetize target network interactors
+  alphabetized = t(apply(target[, 1:2], 1, sort))
+  target$gene_A = alphabetized[, 1]
+  target$gene_B = alphabetized[, 2]
+  target %<>% distinct(gene_A, gene_B)
+})
+networks = names(comparison_list)
+pairs = tidyr::crossing(net1 = networks, net2 = networks) %>% 
+  filter(net1 < net2)
+overlaps = map2_dfr(pairs$net1, pairs$net2, ~ {
+  net1 = comparison_list[[.x]]
+  net2 = comparison_list[[.y]]
+  intersect = inner_join(net1, net2) %>% nrow()
+  union = full_join(net1, net2) %>% nrow()
+  data.frame(net1 = .x, net2 = .y, intersect = intersect, union = union)
+}) %>% 
+  mutate(jaccard = intersect / union) %>% 
+  mutate_at(vars(net1, net2), ~ gsub(" et al., ", "", .)) %>% 
+  mutate(xval = ifelse(net1 == "CF-MS", "This study vs. published", 
+                       "Published vs. published"),
+         comparison = paste0(net1, ' vs.\n', net2))
+
+summary = overlaps %>% 
+  group_by(xval) %>% 
+  summarise(mean = mean(jaccard), median = median(jaccard))
+
+# plot
+pal = brewer.pal(11, 'Spectral')[c(2, 10)]
+p2 = overlaps %>% 
+  ggplot(aes(x = chartr('\n', ' ', comparison) %>% 
+               gsub("2012", " et al., 2012", .) %>% 
+               reorder(jaccard),
+             y = jaccard, color = xval)) +
+  geom_point(size = 0.8) + 
+  geom_errorbar(aes(ymin = 0, ymax = jaccard), width = 0, size = 0.3) +
+  geom_text(aes(label = format(jaccard,  digits = 2)), size = 1.75,
+            hjust = 0, nudge_y = 0.01) +
+  scale_y_continuous('Jaccard index', limits = c(0, 0.21)) +
+  scale_color_manual('', values = pal) +
+  guides(color = guide_legend(ncol = 1)) +
+  coord_flip() +
+  boxed_theme() +
+  theme(axis.title.y = element_blank())
+p2
+ggsave("fig/analysis/human_interactome/overlap/overlaps-jaccard.pdf", p2,
+       width = 7.5, height = 4, units = "cm", useDingbats = FALSE)
